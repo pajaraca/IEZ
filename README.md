@@ -1,6 +1,8 @@
 # IEZ
 An INS-EKF-ZUPT for Pedestrian Dead Reckoning.
 
+All dataset where collected using two foot mounteds MPU6050 at 100Hz and each file has two sets of measurements.
+
 References:
 
 FISCHER, Carl; SUKUMAR, Poorna Talkad; HAZAS, Mike. Tutorial: Implementing a pedestrian tracker using inertial sensors. IEEE pervasive computing, v. 12, n. 2, p. 17-27, 2012.
