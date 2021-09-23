@@ -1,7 +1,7 @@
 # IEZ
 An INS-EKF-ZUPT for Pedestrian Dead Reckoning.
 
-Based in:
+References:
 
 FISCHER, Carl; SUKUMAR, Poorna Talkad; HAZAS, Mike. Tutorial: Implementing a pedestrian tracker using inertial sensors. IEEE pervasive computing, v. 12, n. 2, p. 17-27, 2012.
 
