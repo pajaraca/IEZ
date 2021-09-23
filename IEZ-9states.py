@@ -9,7 +9,7 @@ import pandas as pd
 # Read data from file.
 #samplePeriod = np.around(1/Fs, decimals=4) 
 
-filePath = '~/Datasets/JJR02A/coleta_sistematica/coleta04-02-06-21-conf-3333-5ds_05.csv'
+filePath = '~/datasets/conf-3333-coleta04-02-06-21-5ds_03.csv' #YOU NEED TO VERIFY THIS LINE
 #data = pd.read_csv(filePath, header = None, sep = ',', names=['mpu_id', 'ts', 'q.w', 'q.x', 'q.y', 'q.z', 'ax', 'ay', 'az', 'gx', 'gy', 'gz'])
 data = pd.read_csv(filePath, header = None, sep = ',', names=['t', 'ax1', 'ay1', 'az1', 'gx1', 'gy1', 'gz1', 'ax2', 'ay2', 'az2', 'gx2', 'gy2', 'gz2'])
 
