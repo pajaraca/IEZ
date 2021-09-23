@@ -68,7 +68,7 @@ acc_bias = np.matrix([0, 0, 0]).T
 # Orientation from accelerometers. Sensor is assumed to be stationary.
 # Another assumption is that x-axis is aligned with the pedestrian's foward direction
 
-init_a = np.mean(acc_s[:,0:200], 1) #using a mean to verify improvements
+init_a = np.mean(acc_s[:,0:200], 1)
 
 pitch = -np.arcsin(init_a[0]/g)
 roll = np.arctan(init_a[1]/init_a[2])
@@ -121,9 +121,9 @@ H = np.block([
 sigma_v = 0.01
 R = np.diag([sigma_v, sigma_v, sigma_v])**2
 
+# Stance detection starts here
 # Compute accelerometer magnitude
 acc_mag = np.around(np.sqrt(acc_s[0]**2 + acc_s[1]**2 + acc_s[2]**2), decimals=4)
-
 # Compute gyroscope magnitude
 gyro_mag = np.around(np.sqrt((gyro_s[0])**2 + (gyro_s[1])**2 + (gyro_s[2])**2), decimals=4)
 
@@ -147,28 +147,28 @@ for k in range(datasize-W+1):
 for k in range(datasize-W+1):
     if (stationary[k] == False) and (stationary[k+W-1] == False):
         stationary[k:k+W] = np.zeros((W))
+# Stance detection ends here
        
 # Main Loop
 for t in range(1, datasize):
     ### Start INS (transformation, double integration) ### (1)
     dt = 1/100
 
-    # Remove bias from gyro measurements. (2)
+    # Remove bias from gyro measurements.
     gyro_s1 = gyro_s[:,t:t+1] - gyro_bias
     
-    # Skew-symmetric matrix for angular rates (3)
+    # Skew-symmetric matrix for angular rates
     ang_rate_matrix = np.array([[0,            -gyro_s1[2,0], gyro_s1[1,0]],
                                 [gyro_s1[2,0],   0,           -gyro_s1[0,0]],
                                 [-gyro_s1[1,0],  gyro_s1[0,0],   0]])
     # Update the orientation estimation (4)
     C = C_prev@(2*np.eye(3)+(ang_rate_matrix*dt))@lin.inv((2*np.eye(3)-(ang_rate_matrix*dt)))
     
-    # Transforming the acceleration from sensor frame to navigation frame. (5)
+    # Transforming the acceleration from sensor frame to navigation frame.
     acc_n[:,t:t+1] = 0.5*(C + C_prev)@(acc_s[:,t:t+1]-acc_bias)
     #acc_n[:,t:t+1] = 0.5*(C + C_prev)@acc_s[:,t:t+1]
-    #print(acc_s[:,t:t+1]-acc_bias)
     
-    # Skew-symmetric cross-product operator matrix formed from the n-frame accelerations. (8)
+    # Skew-symmetric cross-product operator matrix formed from the n-frame accelerations.
     S = np.array([[0,           -acc_n[2,t],   acc_n[1,t]],
                   [acc_n[2,t],  0,            -acc_n[0,t]],
                   [-acc_n[1,t],  acc_n[0,t],   0]])
@@ -184,26 +184,25 @@ for t in range(1, datasize):
             [-dt*S,           np.zeros((3,3)),    np.eye((3))]      # velocity
             ])
         
-    # Compute the process noise covariance Q. (10)
+    # Compute the process noise covariance Q.
     Q = (np.diag([sigma_omega, sigma_omega, sigma_omega, 0, 0, 0, sigma_a, sigma_a, sigma_a])*dt)**2
     
-    # Propagate the error covariance matrix. (11)
+    # Propagate the error covariance matrix.
     P = F@P@F.T + Q
     ### End INS ###
 
-    # Stance phase detection and zero-velocity updates. (12)
+    # Zero-velocity updates.
     if (stationary[t:t+1]):
         ### Start Kalman filter zero-velocity update %%%
-        # Compute Kalman gain. (13)
+        # Compute Kalman gain.
         K = P@H.T@lin.inv(H@P@H.T + R)
         
-        # Compute the state errors state. (14)
+        # Compute the state errors state.
         # Update the filter state.
         delta_x = K@vel_n[:,t:t+1]
         
-        # Update the error covariance matrix. (15)
-        # P = ((np.eye((9)) - K@H)@P) @ ((np.eye((9)) - K@H)@P).T + K@R@K.T # Joseph form to guarantee symmetry and positive-definiteness.
-        P = (np.eye((9)) - K@H)@P # Simplified covariance update found in most books.
+        # Update the error covariance matrix
+        P = (np.eye((9)) - K@H)@P
         
         # Extract errors from the KF state.
         attitude_error = delta_x[0:3]#[:,np.newaxis]
@@ -212,17 +211,16 @@ for t in range(1, datasize):
         ### End Kalman filter zero-velocity update ###
         
         ### Apply corrections to INS estimates. ###
-        # Skew-symmetric matrix for small angles to correct orientation. (16)
+        # Skew-symmetric matrix for small angles to correct orientation.
         ang_matrix = -np.array([
                     [0,                   -attitude_error[2,0],   attitude_error[1,0]],
                     [attitude_error[2,0],  0,                      -attitude_error[0,0]],
                     [-attitude_error[1,0],  attitude_error[0,0],    0]
                     ])
         # Correct orientation estimation. (17)
-        #C = C_prev@(2*np.eye(3)+(ang_rate_matrix*dt))@lin.inv((2*np.eye(3)-(ang_rate_matrix*dt)))
         C = (2*np.eye(3)+(ang_matrix))@lin.inv((2*np.eye(3)-(ang_matrix)))@C
         
-        # Correct position and velocity based on Kalman error estimates. (18-19)
+        # Correct position and velocity based on Kalman error estimates.
         vel_n[:,t:t+1]=vel_n[:,t:t+1]-vel_error
         pos_n[:,t:t+1]=pos_n[:,t:t+1]-pos_error
         
